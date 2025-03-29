@@ -13,7 +13,7 @@ function Footer() {
         React.createElement(
             'p',
             null,
-            'A GitHub personal access token is required to fetch discussions data and increases rate limits.'
+            'A GitHub personal access token is required to fetch discussions data and enables GraphQL for better performance.'
         )
     );
 }

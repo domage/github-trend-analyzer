@@ -8,7 +8,7 @@ function TokenInput({ githubToken, setGithubToken }) {
         React.createElement(
             'label',
             { className: 'block text-gray-700 mb-2', htmlFor: 'githubToken' },
-            'GitHub API Token (required for discussions count)'
+            'GitHub API Token (enables GraphQL for better performance)'
         ),
         React.createElement('input', {
             id: 'githubToken',
@@ -21,7 +21,7 @@ function TokenInput({ githubToken, setGithubToken }) {
         React.createElement(
             'p',
             { className: 'text-xs text-gray-500 mt-1' },
-            'Tokens are stored in your browser\'s local storage.'
+            'Tokens are stored in your browser\'s local storage. Required for GraphQL access.'
         )
     );
 }
