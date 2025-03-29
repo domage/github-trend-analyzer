@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub H-Index Calculator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.19/babel.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div id="app" class="p-4"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const GitHubHIndexApp = () => {
+            const [searchTerm, setSearchTerm] = useState('');
+            const [dateLimit, setDateLimit] = useState('2023-01-01');
+            const [results, setResults] = useState(null);
+            const [isLoading, setIsLoading] = useState(false);
+            const [error, setError] = useState(null);
+            const [githubToken, setGithubToken] = useState(localStorage.getItem('githubToken') || '');
+
+            // Save token to localStorage when it changes
+            useEffect(() => {
+                localStorage.setItem('githubToken', githubToken);
+            }, [githubToken]);
+
+            const searchGitHub = async () => {
+                if (!searchTerm) {
+                    setError('Please enter a search term');
+                    return;
+                }
+
+                setIsLoading(true);
+                setError(null);
+                
+                try {
+                    const perPage = 100; // Maximum allowed by GitHub API
+                    
+                    // Fetch and calculate the Star H-Index first (sorted by stars)
+                    const starResult = await fetchAndCalculateHIndex('stargazers_count', 'stars');
+                    
+                    // Then fetch and calculate the Fork H-Index (sorted by forks)
+                    const forkResult = await fetchAndCalculateHIndex('forks_count', 'forks');
+                    
+                    // Use combined repos from both fetches
+                    const allRepos = [...new Map([...starResult.repos, ...forkResult.repos].map(repo => [repo.id, repo])).values()];
+                    
+                    // Sort for display
+                    const topStarredRepos = [...allRepos].sort((a, b) => b.stargazers_count - a.stargazers_count).slice(0, 10);
+                    const topForkedRepos = [...allRepos].sort((a, b) => b.forks_count - a.forks_count).slice(0, 10);
+                    
+                    setResults({
+                        searchTerm,
+                        dateLimit,
+                        starHIndex: starResult.hIndex,
+                        forkHIndex: forkResult.hIndex,
+                        totalRepos: allRepos.length,
+                        topStarredRepos,
+                        topForkedRepos
+                    });
+                    
+                    async function fetchAndCalculateHIndex(property, sortParam) {
+                        let repos = [];
+                        let page = 1;
+                        let currentHIndex = 0;
+                        let hasMoreRepos = true;
+                        let reachedHIndex = false;
+                        let totalItems = 0;
+                        
+                        while (hasMoreRepos && page <= 10 && !reachedHIndex) {
+                            const query = encodeURIComponent(`${searchTerm} created:>${dateLimit}`);
+                            const url = `https://api.github.com/search/repositories?q=${query}&sort=${sortParam}&order=desc&page=${page}&per_page=${perPage}`;
+                            
+                            const headers = {
+                                'Accept': 'application/vnd.github+json'
+                            };
+                            
+                            if (githubToken) {
+                                headers['Authorization'] = `Bearer ${githubToken}`;
+                            }
+                            
+                            const response = await fetch(url, { headers });
+                            
+                            if (!response.ok) {
+                                throw new Error(`GitHub API returned ${response.status}: ${await response.text()}`);
+                            }
+                            
+                            const data = await response.json();
+                            totalItems = data.total_count;
+                            
+                            if (data.items && data.items.length > 0) {
+                                repos = [...repos, ...data.items];
+                                
+                                // Check if we've reached the h-index with the current set of repos
+                                const tempHIndex = calculateHIndex(repos, property);
+                                
+                                // If h-index hasn't increased or we've reached theoretical maximum, stop fetching
+                                if (tempHIndex > currentHIndex) {
+                                    currentHIndex = tempHIndex;
+                                    
+                                    // If the current count of repos is significantly greater than the h-index,
+                                    // we've likely found the true h-index
+                                    if (repos.length >= currentHIndex * 2 && repos[currentHIndex-1][property] === currentHIndex && 
+                                        (repos.length === data.total_count || repos.length >= currentHIndex * 3)) {
+                                        reachedHIndex = true;
+                                    }
+                                } else if (repos.length >= perPage * 2 && tempHIndex === currentHIndex) {
+                                    // If h-index hasn't improved after fetching 200+ repositories, likely found it
+                                    reachedHIndex = true;
+                                }
+                                
+                                if (data.items.length < perPage) {
+                                    hasMoreRepos = false;
+                                }
+                            } else {
+                                hasMoreRepos = false;
+                            }
+                            
+                            page++;
+                        }
+                        
+                        return {
+                            hIndex: currentHIndex,
+                            repos,
+                            totalFetched: Math.min(totalItems, repos.length)
+                        };
+                    }
+                } catch (err) {
+                    setError(err.message);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            const calculateHIndex = (repos, property) => {
+                // Sort repositories by the given property (stars or forks) in descending order
+                const sortedRepos = [...repos].sort((a, b) => b[property] - a[property]);
+                
+                // Find the h-index
+                let hIndex = 0;
+                for (let i = 0; i < sortedRepos.length; i++) {
+                    if (sortedRepos[i][property] >= i + 1) {
+                        hIndex = i + 1;
+                    } else {
+                        break;
+                    }
+                }
+                
+                return hIndex;
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto">
+                    <h1 className="text-3xl font-bold text-center mb-8">GitHub H-Index Calculator</h1>
+                    
+                    <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+                        <div className="mb-4">
+                            <label className="block text-gray-700 mb-2" htmlFor="githubToken">
+                                GitHub API Token (optional, increases rate limits)
+                            </label>
+                            <input
+                                id="githubToken"
+                                type="password"
+                                className="w-full p-2 border rounded"
+                                value={githubToken}
+                                onChange={(e) => setGithubToken(e.target.value)}
+                                placeholder="ghp_xxxxxxxxxxxxxxx"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                                Tokens are stored in your browser's local storage.
+                            </p>
+                        </div>
+                        
+                        <div className="mb-4">
+                            <label className="block text-gray-700 mb-2" htmlFor="searchTerm">
+                                Search Term
+                            </label>
+                            <input
+                                id="searchTerm"
+                                type="text"
+                                className="w-full p-2 border rounded"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="e.g. SOAP, Python, React"
+                            />
+                        </div>
+                        
+                        <div className="mb-6">
+                            <label className="block text-gray-700 mb-2" htmlFor="dateLimit">
+                                Created After Date
+                            </label>
+                            <input
+                                id="dateLimit"
+                                type="date"
+                                className="w-full p-2 border rounded"
+                                value={dateLimit}
+                                onChange={(e) => setDateLimit(e.target.value)}
+                            />
+                        </div>
+                        
+                        <button
+                            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                            onClick={searchGitHub}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? 'Searching...' : 'Calculate H-Indices'}
+                        </button>
+                    </div>
+                    
+                    {error && (
+                        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+                            <p className="font-bold">Error</p>
+                            <p>{error}</p>
+                        </div>
+                    )}
+                    
+                    {results && (
+                        <div className="bg-white p-6 rounded-lg shadow-md">
+                            <h2 className="text-2xl font-bold mb-4">Results for "{results.searchTerm}"</h2>
+                            <p className="mb-2">Repositories created after: {results.dateLimit}</p>
+                            <p className="mb-2">Total repositories analyzed: {results.totalRepos}</p>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                                <div className="bg-blue-50 p-4 rounded-lg">
+                                    <h3 className="text-xl font-bold mb-3 text-blue-800">Star H-Index: {results.starHIndex}</h3>
+                                    <p className="mb-4 text-sm">
+                                        This means there are at least {results.starHIndex} repositories with at least {results.starHIndex} stars each.
+                                    </p>
+                                    <h4 className="font-bold mb-2">Top Starred Repositories:</h4>
+                                    <ul className="text-sm">
+                                        {results.topStarredRepos.map(repo => (
+                                            <li key={repo.id} className="mb-2">
+                                                <a href={repo.html_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                                    {repo.full_name}
+                                                </a>
+                                                <span className="ml-2 text-gray-600">({repo.stargazers_count} ⭐)</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                
+                                <div className="bg-green-50 p-4 rounded-lg">
+                                    <h3 className="text-xl font-bold mb-3 text-green-800">Fork H-Index: {results.forkHIndex}</h3>
+                                    <p className="mb-4 text-sm">
+                                        This means there are at least {results.forkHIndex} repositories with at least {results.forkHIndex} forks each.
+                                    </p>
+                                    <h4 className="font-bold mb-2">Top Forked Repositories:</h4>
+                                    <ul className="text-sm">
+                                        {results.topForkedRepos.map(repo => (
+                                            <li key={repo.id} className="mb-2">
+                                                <a href={repo.html_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                                    {repo.full_name}
+                                                </a>
+                                                <span className="ml-2 text-gray-600">({repo.forks_count} 🍴)</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    <footer className="mt-8 text-center text-gray-500 text-sm">
+                        <p>Note: GitHub API has rate limits. For unauthenticated requests, the rate limit is 60 requests per hour.</p>
+                        <p>For better results, provide a GitHub personal access token.</p>
+                    </footer>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<GitHubHIndexApp />, document.getElementById('app'));
+    </script>
+</body>
+</html>
