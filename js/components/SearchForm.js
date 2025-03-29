@@ -11,7 +11,6 @@ function SearchForm({
     githubToken,
     setGithubToken
 }) {
-
     // Handle key press in search term field
     const handleKeyPress = (e) => {
         if (e.key === 'Enter' && !isLoading) {
@@ -39,7 +38,7 @@ function SearchForm({
                 value: searchTerm,
                 onChange: (e) => setSearchTerm(e.target.value),
                 onKeyPress: handleKeyPress,
-                placeholder: 'e.g. SOAP, Python, React'
+                placeholder: 'e.g. SOAP; Python; React (use ; to compare multiple terms)'
             })
         ),
         React.createElement(

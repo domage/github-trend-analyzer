@@ -8,7 +8,7 @@ function TokenInput({ githubToken, setGithubToken }) {
         React.createElement(
             'label',
             { className: 'block text-gray-700 mb-2', htmlFor: 'githubToken' },
-            'GitHub API Token (optional, increases rate limits)'
+            'GitHub API Token (required for discussions count)'
         ),
         React.createElement('input', {
             id: 'githubToken',

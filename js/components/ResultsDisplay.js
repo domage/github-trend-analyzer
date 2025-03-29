@@ -18,9 +18,28 @@ function ResultsDisplay({ results }) {
             `Repositories created after: ${results.dateLimit}`
         ),
         React.createElement(
-            'p',
-            { className: 'mb-2' },
-            `Total repositories analyzed: ${results.totalRepos}`
+            'div',
+            { className: 'mb-4' },
+            React.createElement(
+                'p',
+                { className: 'mb-1' },
+                `Total repositories: ${formatNumber(results.totalRepos)}`
+            ),
+            React.createElement(
+                'p',
+                { className: 'mb-1' },
+                `Repositories analyzed for H-Index: ${formatNumber(results.analyzedRepos)}`
+            ),
+            React.createElement(
+                'p',
+                { className: 'mb-1' },
+                `Total pull requests: ${formatNumber(results.totalPRs)}`
+            ),
+            React.createElement(
+                'p',
+                { className: 'mb-1' },
+                `Total discussions: ${githubToken ? formatNumber(results.totalDiscussions) : 'Requires token'}`
+            )
         ),
         React.createElement(
             'div',

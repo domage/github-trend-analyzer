@@ -21,3 +21,14 @@ function calculateHIndex(repos, property) {
     
     return hIndex;
 }
+
+/**
+ * Format a number with thousands separators for better readability
+ * 
+ * @param {number} num - Number to format
+ * @returns {string} - Formatted number string
+ */
+function formatNumber(num) {
+    if (num === undefined || num === null) return '0';
+    return num.toLocaleString();
+}

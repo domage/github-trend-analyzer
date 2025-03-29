@@ -96,7 +96,9 @@ function MultiSearchResults({ multiResults }) {
                         createSortableHeader('searchTerm', 'Search Term'),
                         createSortableHeader('starHIndex', 'Star H-Index'),
                         createSortableHeader('forkHIndex', 'Fork H-Index'),
-                        createSortableHeader('totalRepos', 'Total Repositories'),
+                        createSortableHeader('totalRepos', 'Total Repos'),
+                        createSortableHeader('totalPRs', 'PRs'),
+                        createSortableHeader('totalDiscussions', 'Discussions'),
                         createSortableHeader('topStar', 'Top Starred')
                     )
                 ),
@@ -128,7 +130,17 @@ function MultiSearchResults({ multiResults }) {
                             React.createElement(
                                 'td',
                                 { className: 'px-4 py-3 border-b text-center' },
-                                result.totalRepos
+                                formatNumber(result.totalRepos)
+                            ),
+                            React.createElement(
+                                'td',
+                                { className: 'px-4 py-3 border-b text-center' },
+                                formatNumber(result.totalPRs)
+                            ),
+                            React.createElement(
+                                'td',
+                                { className: 'px-4 py-3 border-b text-center' },
+                                result.githubToken ? formatNumber(result.totalDiscussions) : 'Requires token'
                             ),
                             React.createElement(
                                 'td',
