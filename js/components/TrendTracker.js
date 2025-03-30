@@ -23,9 +23,25 @@ function TrendTracker({ githubToken }) {
     // Add a search term
     const addSearchTerm = () => {
         if (!searchInput.trim()) return;
-        if (searchTerms.includes(searchInput.trim())) return;
-        setSearchTerms([...searchTerms, searchInput.trim()]);
-        setSearchInput('');
+        
+        // Split the input by semicolons and process each term
+        const terms = searchInput.split(';').map(term => term.trim()).filter(term => term);
+        
+        // Add each term if it's not already in the list
+        const newTerms = [...searchTerms];
+        let addedCount = 0;
+        
+        terms.forEach(term => {
+            if (!newTerms.includes(term)) {
+                newTerms.push(term);
+                addedCount++;
+            }
+        });
+        
+        if (addedCount > 0) {
+            setSearchTerms(newTerms);
+            setSearchInput('');
+        }
     };
 
     // Allow adding search term with Enter key
@@ -286,7 +302,7 @@ function TrendTracker({ githubToken }) {
                         value: searchInput,
                         onChange: (e) => setSearchInput(e.target.value),
                         onKeyPress: handleKeyPress,
-                        placeholder: 'Enter a search term (e.g., "React", "language:typescript")'
+                        placeholder: 'Enter search terms (use ; to separate multiple terms, e.g., "React; Vue; Angular")'
                     }),
                     React.createElement(
                         'button',
