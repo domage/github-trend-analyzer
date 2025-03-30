@@ -122,7 +122,7 @@ const trendTrackerService = {
         return timeSeriesData;
     },
     
-    /**
+ /**
      * Generate time windows for analysis
      * 
      * @param {string} startYear - Starting year
@@ -130,49 +130,70 @@ const trendTrackerService = {
      * @param {string} granularity - Time granularity ('year', 'quarter', 'month')
      * @returns {Array} - Array of time window objects
      */
-    generateTimeWindows(startYear, endYear, granularity = 'year') {
-        const timeWindows = [];
-        
-        if (granularity === 'year') {
-            // Generate yearly windows
-            for (let year = parseInt(startYear); year <= parseInt(endYear); year++) {
+ generateTimeWindows(startYear, endYear, granularity = 'year') {
+    const timeWindows = [];
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
+    
+    // Calculate current quarter (1-4)
+    const currentQuarter = Math.ceil(currentMonth / 3);
+    
+    if (granularity === 'year') {
+        // Generate yearly windows
+        for (let year = parseInt(startYear); year <= parseInt(endYear); year++) {
+            // Skip current year since it's incomplete
+            if (year === currentYear) {
+                continue;
+            }
+            
+            timeWindows.push({
+                start: `${year}-01-01`,
+                end: `${year}-12-31`
+            });
+        }
+    } else if (granularity === 'quarter') {
+        // Generate quarterly windows
+        for (let year = parseInt(startYear); year <= parseInt(endYear); year++) {
+            for (let quarter = 1; quarter <= 4; quarter++) {
+                // Skip current quarter and beyond in current year
+                if (year === currentYear && quarter >= currentQuarter) {
+                    continue;
+                }
+                
+                const startMonth = (quarter - 1) * 3 + 1;
+                const endMonth = quarter * 3;
+                const endDay = endMonth === 2 ? (this.isLeapYear(year) ? 29 : 28) : 
+                               [4, 6, 9, 11].includes(endMonth) ? 30 : 31;
+                
                 timeWindows.push({
-                    start: `${year}-01-01`,
-                    end: `${year}-12-31`
+                    start: `${year}-${String(startMonth).padStart(2, '0')}-01`,
+                    end: `${year}-${String(endMonth).padStart(2, '0')}-${endDay}`
                 });
             }
-        } else if (granularity === 'quarter') {
-            // Generate quarterly windows
-            for (let year = parseInt(startYear); year <= parseInt(endYear); year++) {
-                for (let quarter = 1; quarter <= 4; quarter++) {
-                    const startMonth = (quarter - 1) * 3 + 1;
-                    const endMonth = quarter * 3;
-                    const endDay = endMonth === 2 ? (this.isLeapYear(year) ? 29 : 28) : 
-                                   [4, 6, 9, 11].includes(endMonth) ? 30 : 31;
-                    
-                    timeWindows.push({
-                        start: `${year}-${String(startMonth).padStart(2, '0')}-01`,
-                        end: `${year}-${String(endMonth).padStart(2, '0')}-${endDay}`
-                    });
+        }
+    } else if (granularity === 'month') {
+        // Generate monthly windows
+        for (let year = parseInt(startYear); year <= parseInt(endYear); year++) {
+            for (let month = 1; month <= 12; month++) {
+                // Skip current month and beyond in current year
+                if (year === currentYear && month >= currentMonth) {
+                    continue;
                 }
-            }
-        } else if (granularity === 'month') {
-            // Generate monthly windows
-            for (let year = parseInt(startYear); year <= parseInt(endYear); year++) {
-                for (let month = 1; month <= 12; month++) {
-                    const endDay = month === 2 ? (this.isLeapYear(year) ? 29 : 28) : 
-                                  [4, 6, 9, 11].includes(month) ? 30 : 31;
-                    
-                    timeWindows.push({
-                        start: `${year}-${String(month).padStart(2, '0')}-01`,
-                        end: `${year}-${String(month).padStart(2, '0')}-${endDay}`
-                    });
-                }
+                
+                const endDay = month === 2 ? (this.isLeapYear(year) ? 29 : 28) : 
+                              [4, 6, 9, 11].includes(month) ? 30 : 31;
+                
+                timeWindows.push({
+                    start: `${year}-${String(month).padStart(2, '0')}-01`,
+                    end: `${year}-${String(month).padStart(2, '0')}-${endDay}`
+                });
             }
         }
-        
-        return timeWindows;
-    },
+    }
+    
+    return timeWindows;
+},
     
     /**
      * Check if a year is a leap year
