@@ -8,7 +8,7 @@ function TokenInput({ githubToken, setGithubToken }) {
         React.createElement(
             'label',
             { className: 'block text-gray-700 mb-2', htmlFor: 'githubToken' },
-            'GitHub API Token (enables GraphQL for better performance)'
+            'GitHub API Token (enables GraphQL for better performance and trend analysis)'
         ),
         React.createElement('input', {
             id: 'githubToken',
@@ -19,9 +19,23 @@ function TokenInput({ githubToken, setGithubToken }) {
             placeholder: 'ghp_xxxxxxxxxxxxxxx'
         }),
         React.createElement(
-            'p',
-            { className: 'text-xs text-gray-500 mt-1' },
-            'Tokens are stored in your browser\'s local storage. Required for GraphQL access.'
+            'div',
+            { className: 'text-xs text-gray-500 mt-1 flex justify-between' },
+            React.createElement(
+                'span',
+                null,
+                'Tokens are stored in your browser\'s local storage. Required for discussions data and trend analysis.'
+            ),
+            React.createElement(
+                'a',
+                { 
+                    href: 'https://github.com/settings/tokens',
+                    target: '_blank',
+                    rel: 'noopener noreferrer',
+                    className: 'text-blue-500 hover:underline'
+                },
+                'Generate token'
+            )
         )
     );
 }
