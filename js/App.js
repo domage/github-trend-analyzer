@@ -11,6 +11,7 @@ function GitHubHIndexApp() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [githubToken, setGithubToken] = useState(localStorage.getItem('githubToken') || '');
+    const [activeTab, setActiveTab] = useState('hindex'); // 'hindex' or 'trends'
 
     // Save token to localStorage when it changes
     useEffect(() => {
@@ -120,26 +121,71 @@ function GitHubHIndexApp() {
         { className: 'max-w-4xl mx-auto' },
         React.createElement(
             'h1',
-            { className: 'text-3xl font-bold text-center mb-8' },
-            'GitHub H-Index Calculator'
+            { className: 'text-3xl font-bold text-center mb-4' },
+            'GitHub H-Index & Trends Calculator'
         ),
-        React.createElement(SearchForm, {
-            searchTerm,
-            setSearchTerm,
-            dateLimit,
-            setDateLimit,
-            isLoading,
-            handleSearch: searchGitHub,
-            githubToken,
-            setGithubToken
-        }),
-        React.createElement(ErrorDisplay, { error }),
         
-        // Show either single result or multiple results table based on what we have
-        multiResults.length > 0 
-            ? React.createElement(MultiSearchResults, { multiResults }) 
-            : React.createElement(ResultsDisplay, { results }),
-            
+        // Token Input (shared across tabs)
+        React.createElement(
+            'div',
+            { className: 'bg-white p-6 rounded-lg shadow-md mb-6' },
+            React.createElement(TokenInput, { githubToken, setGithubToken })
+        ),
+        
+        // Tab selector
+        React.createElement(
+            'div',
+            { className: 'flex border-b mb-6' },
+            React.createElement(
+                'button',
+                { 
+                    className: `py-2 px-4 font-medium ${activeTab === 'hindex' ? 
+                        'text-blue-500 border-b-2 border-blue-500' : 
+                        'text-gray-500 hover:text-blue-500'}`,
+                    onClick: () => setActiveTab('hindex')
+                },
+                'H-Index Calculator'
+            ),
+            React.createElement(
+                'button',
+                { 
+                    className: `py-2 px-4 font-medium ${activeTab === 'trends' ? 
+                        'text-blue-500 border-b-2 border-blue-500' : 
+                        'text-gray-500 hover:text-blue-500'}`,
+                    onClick: () => setActiveTab('trends')
+                },
+                'Trend Tracker'
+            )
+        ),
+        
+        // Tab content
+        activeTab === 'hindex' ? (
+            // H-Index Calculator Tab
+            React.createElement(
+                'div',
+                null,
+                React.createElement(SearchForm, {
+                    searchTerm,
+                    setSearchTerm,
+                    dateLimit,
+                    setDateLimit,
+                    isLoading,
+                    handleSearch: searchGitHub,
+                    githubToken,
+                    setGithubToken
+                }),
+                React.createElement(ErrorDisplay, { error }),
+                
+                // Show either single result or multiple results table based on what we have
+                multiResults.length > 0 
+                    ? React.createElement(MultiSearchResults, { multiResults }) 
+                    : React.createElement(ResultsDisplay, { results })
+            )
+        ) : (
+            // Trend Tracker Tab
+            React.createElement(TrendTracker, { githubToken })
+        ),
+        
         React.createElement(Footer)
     );
 }

@@ -22,7 +22,7 @@ function SearchForm({
     return React.createElement(
         'div',
         { className: 'bg-white p-6 rounded-lg shadow-md mb-6' },
-        React.createElement(TokenInput, { githubToken, setGithubToken }),
+
         React.createElement(
             'div',
             { className: 'mb-4' },
