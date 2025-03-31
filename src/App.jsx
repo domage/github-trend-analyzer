@@ -49,43 +49,6 @@ function GitHubHIndexApp() {
         localStorage.setItem('githubToken', githubToken);
     }, [githubToken]);
 
-    // Add a search term
-    const addSearchTerm = () => {
-        if (!searchInput.trim()) return;
-        
-        // Split the input by semicolons and process each term
-        const terms = searchInput.split(';').map(term => term.trim()).filter(term => term);
-        
-        // Add each term if it's not already in the list
-        const newTerms = [...searchTerms];
-        let addedCount = 0;
-        
-        terms.forEach(term => {
-            if (!newTerms.includes(term)) {
-                newTerms.push(term);
-                addedCount++;
-            }
-        });
-        
-        if (addedCount > 0) {
-            setSearchTerms(newTerms);
-            setSearchInput('');
-        }
-    };
-
-    // Allow adding search term with Enter key
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            addSearchTerm();
-        }
-    };
-
-    // Remove a search term
-    const removeSearchTerm = (term) => {
-        setSearchTerms(searchTerms.filter(t => t !== term));
-    };
-
     // Process a single search term for H-Index
     const processSearchTermForHIndex = async (term) => {
         // Fetch and calculate the Star H-Index first (sorted by stars)
@@ -144,20 +107,21 @@ function GitHubHIndexApp() {
 
     // Handle form submission
     const handleSearch = async (terms = searchTerms) => {
-        console.log("🔍 handleSearch called with:", terms);
-        
         if (terms.length === 0) {
             setError('Please add at least one search term');
             return;
         }
-                
+    
         setSearchTerms(terms);
         setIsLoading(true);
         setError(null);
-
+    
+        // Start progress bar
+        if (window.NProgress) window.NProgress.start();
+    
         // Update URL with search parameters
         urlSharingUtils.updateSearchUrl(
-            searchTerms.join(';'), 
+            searchTerms.join(';'),
             dateLimit,
             startYear,
             endYear,
@@ -216,6 +180,7 @@ function GitHubHIndexApp() {
             setError(err.message);
         } finally {
             setIsLoading(false);
+            if (window.NProgress) window.NProgress.done();
         }
     };
 
@@ -232,6 +197,7 @@ function GitHubHIndexApp() {
             </div>
             
             {/* Unified Search Interface */}
+            <fieldset disabled={isLoading}>
             <div className="bg-white p-6 rounded-lg shadow-md mb-6">
                
                 {/* Search terms input - using the new TagInput component */}
@@ -359,6 +325,7 @@ function GitHubHIndexApp() {
                 </div>
                 )}
             </div>
+            </fieldset>
             
             
             {/* Error display */}
