@@ -20,6 +20,44 @@ function TagInput({ tags, setTags, onAnalyze, isLoading }) {
     tagRefs.current = tagRefs.current.slice(0, tags.length);
   }, [tags]);
 
+  // Method to handle tag deletion with consistent focus behavior
+  const handleTagDeletion = (indicesToDelete) => {
+    // Sort indices in descending order to avoid index shifting problems
+    const sortedIndices = [...indicesToDelete].sort((a, b) => b - a);
+    const newTags = [...tags];
+    
+    // Remove tags from highest index to lowest
+    sortedIndices.forEach(idx => {
+      newTags.splice(idx, 1);
+    });
+    
+    setTags(newTags);
+    
+    // Determine where to focus next
+    if (newTags.length > 0) {
+      // Default to the right of the deleted tags
+      const maxDeletedIndex = Math.max(...sortedIndices);
+      let closestIndex = maxDeletedIndex;
+      
+      // If the right side is out of bounds, move to the left
+      if (closestIndex >= newTags.length) {
+        closestIndex = newTags.length - 1;
+      }
+      
+      setSelectedTagIndices([closestIndex]);
+      setLastSelectedIndex(closestIndex);
+      
+      // Ensure the tag is focused
+      if (tagRefs.current[closestIndex]) {
+        tagRefs.current[closestIndex].focus();
+      }
+    } else {
+      // No pills left, focus the input
+      setSelectedTagIndices([]);
+      inputRef.current.focus();
+    }
+  };
+
   // Handle keyboard input in the input field
   const handleKeyDown = (e) => {
     // Enter key: add tag or submit
@@ -69,22 +107,9 @@ function TagInput({ tags, setTags, onAnalyze, isLoading }) {
   const handleTagKeyDown = (e, index) => {
     e.stopPropagation();
     
-    // Delete or Backspace: remove selected tags
+    // Delete or Backspace: remove selected tags and manage focus
     if ((e.key === 'Delete' || e.key === 'Backspace') && selectedTagIndices.length > 0) {
-      // Sort indices in descending order to avoid index shifting problems
-      const sortedIndices = [...selectedTagIndices].sort((a, b) => b - a);
-      const newTags = [...tags];
-      
-      // Remove tags from highest index to lowest
-      sortedIndices.forEach(idx => {
-        newTags.splice(idx, 1);
-      });
-      
-      setTags(newTags);
-      setSelectedTagIndices([]);
-      
-      // Focus input after deletion
-      inputRef.current.focus();
+      handleTagDeletion(selectedTagIndices);
       e.preventDefault();
     }
     // Enter: edit the selected tag
@@ -215,14 +240,28 @@ function TagInput({ tags, setTags, onAnalyze, isLoading }) {
 
   const finishEditing = (index) => {
     const newValue = editInputRef.current.value.trim();
-    if (newValue && newValue !== tags[index]) {
+  
+    if (newValue === '') {
+      setEditingIndex(-1);
+      handleTagDeletion([index]);
+    } else if (newValue !== tags[index]) {
       const newTags = [...tags];
       newTags[index] = newValue;
       setTags(newTags);
-    }
+      setEditingIndex(-1);
   
-    cancelEditing(index);
-  };
+      // Restore focus after re-render
+      setTimeout(() => {
+        if (tagRefs.current[index]) {
+          tagRefs.current[index].focus();
+        } else {
+          inputRef.current?.focus();
+        }
+      }, 0);
+    } else {
+      cancelEditing(index);
+    }
+  };  
 
   // Focus the selected tag when selection changes
   useEffect(() => {
