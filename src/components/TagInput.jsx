@@ -377,12 +377,28 @@ function TagInput({ tags, setTags, onAnalyze, isLoading }) {
 
   // Add tags from the current input value
   const addTags = () => {
-    if (inputValue.trim() !== '') {
-      addTagsFromArray(inputValue.split(';')
-        .map(tag => tag.trim())
-        .filter(tag => tag !== '')
-      );
-      setInputValue('');
+    const rawTags = inputValue.split(';')
+      .map(tag => tag.trim())
+      .filter(tag => tag !== '');
+
+    if (rawTags.length === 0) return;
+
+    const newTags = rawTags.filter(tag => !tags.includes(tag));
+    const duplicates = rawTags.filter(tag => tags.includes(tag));
+
+    if (newTags.length > 0) {
+      setTags([...tags, ...newTags]);
+      setInputValue(''); // only clear if we added something
+    }
+
+    if (duplicates.length > 0) {
+      // Highlight all duplicates
+      const duplicateIndices = tags
+        .map((tag, i) => duplicates.includes(tag) ? i : -1)
+        .filter(i => i !== -1);
+
+      setBlinkedTagIndices(duplicateIndices);
+      setTimeout(() => setBlinkedTagIndices([]), 400);
     }
   };
 
