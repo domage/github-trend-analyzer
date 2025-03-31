@@ -4,7 +4,7 @@
 
 GitHub Trend Analyzer tracks and visualizes the popularity trends of technologies and projects on GitHub, providing H-Index calculations and comparative metrics over time.
 
-**Live Demo**: [https://domage.github.io/github-trend-analyzer/](https://domage.github.io/github-trend-analyzer/)
+**Live Demo**: [https://trends.domage.dev/](https://trends.domage.dev/)
 
 ## Features
 
