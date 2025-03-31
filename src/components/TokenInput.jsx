@@ -48,7 +48,7 @@ function TokenInput({ githubToken, setGithubToken }) {
                     Tokens are stored in your browser's local storage. Required for discussions data and trend analysis.
                 </span>
                 <a
-                    href="https://github.com/settings/tokens"
+                    href="https://github.com/settings/personal-access-tokens"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-500 hover:underline"
