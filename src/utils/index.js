@@ -5,7 +5,7 @@
  * @param {string} property - The property to calculate H-Index on (e.g., 'stargazers_count')
  * @returns {number} - The calculated H-Index
  */
-function calculateHIndex(repos, property) {
+export function calculateHIndex(repos, property) {
     // Sort repositories by the given property (stars or forks) in descending order
     const sortedRepos = [...repos].sort((a, b) => b[property] - a[property]);
     
@@ -28,7 +28,7 @@ function calculateHIndex(repos, property) {
  * @param {number} num - Number to format
  * @returns {string} - Formatted number string
  */
-function formatNumber(num) {
+export function formatNumber(num) {
     if (num === undefined || num === null) return '0';
     return num.toLocaleString();
 }
