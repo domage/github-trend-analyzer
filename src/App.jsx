@@ -244,9 +244,6 @@ function GitHubHIndexApp() {
                         isLoading={isLoading}
                     />
                 </div>
-                
-
-                
                 {/* Analysis Options */}
                 <div className="mb-4">
                     <h3 className="font-bold mb-2">Trends Analysis</h3>

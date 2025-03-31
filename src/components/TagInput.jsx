@@ -10,6 +10,8 @@ function TagInput({ tags, setTags, onAnalyze, isLoading }) {
   const [selectedTagIndices, setSelectedTagIndices] = useState([]);
   const [lastSelectedIndex, setLastSelectedIndex] = useState(-1);
   const [editingIndex, setEditingIndex] = useState(-1);
+  const [blinkedTagIndices, setBlinkedTagIndices] = useState([]);
+
   const inputRef = useRef(null);
   const containerRef = useRef(null);
   const tagRefs = useRef([]);
@@ -240,23 +242,31 @@ function TagInput({ tags, setTags, onAnalyze, isLoading }) {
 
   const finishEditing = (index) => {
     const newValue = editInputRef.current.value.trim();
-  
+
     if (newValue === '') {
       setEditingIndex(-1);
       handleTagDeletion([index]);
-    } else if (newValue !== tags[index]) {
+      return;
+    }
+  
+    // Check for duplicates (excluding the one we're editing)
+    const duplicateIndex = tags.findIndex((tag, i) => tag === newValue && i !== index);
+    if (duplicateIndex !== -1) {
+      // Just blink the duplicate — don't exit edit mode
+      setBlinkedTagIndices([duplicateIndex]);
+      setTimeout(() => setBlinkedTagIndices([]), 400);
+      return;
+    }
+  
+    // Proceed with saving the edit
+    if (newValue !== tags[index]) {
       const newTags = [...tags];
       newTags[index] = newValue;
       setTags(newTags);
       setEditingIndex(-1);
   
-      // Restore focus after re-render
       setTimeout(() => {
-        if (tagRefs.current[index]) {
-          tagRefs.current[index].focus();
-        } else {
-          inputRef.current?.focus();
-        }
+        tagRefs.current[index]?.focus();
       }, 0);
     } else {
       cancelEditing(index);
@@ -378,9 +388,22 @@ function TagInput({ tags, setTags, onAnalyze, isLoading }) {
 
   // Add tags from an array of strings
   const addTagsFromArray = (newTags) => {
-    const uniqueNewTags = newTags.filter(tag => !tags.includes(tag));
+    const trimmedNewTags = newTags.map(tag => tag.trim()).filter(tag => tag !== '');
+
+    const uniqueNewTags = trimmedNewTags.filter(tag => !tags.includes(tag));
+    const duplicateTags = trimmedNewTags.filter(tag => tags.includes(tag));
+  
     if (uniqueNewTags.length > 0) {
       setTags([...tags, ...uniqueNewTags]);
+    }
+  
+    if (duplicateTags.length > 0) {
+      const duplicateIndices = tags
+        .map((tag, i) => duplicateTags.includes(tag) ? i : -1)
+        .filter(i => i !== -1);
+  
+      setBlinkedTagIndices(duplicateIndices);
+      setTimeout(() => setBlinkedTagIndices([]), 400);
     }
   };
 
@@ -444,13 +467,15 @@ function TagInput({ tags, setTags, onAnalyze, isLoading }) {
         {tags.map((tag, index) => (
           <div 
             key={index} 
-            className={`flex items-center px-2 py-1 rounded-md mr-2 mb-1 max-w-full
+            className={`flex items-center px-2 py-1 rounded-md mr-2 mb-1 max-w-full transition
                 ${editingIndex === index 
                   ? 'bg-gray-100 text-gray-800 ring-1 ring-gray-300' 
                   : selectedTagIndices.includes(index) 
                     ? 'bg-blue-500 text-white ring-2 ring-blue-300' 
                     : 'bg-blue-100 text-blue-800'
-                }`}
+                }
+                ${blinkedTagIndices.includes(index) ? 'animate-blink' : ''}
+                `}
             {...(editingIndex === index ? {} : makeTagInteractive(tag, index))}
             onBlur={handleTagBlur}
           >

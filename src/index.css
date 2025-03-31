@@ -1,3 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@keyframes blink {
+    0%, 100% { background-color: #bfdbfe; }
+    50% { background-color: #93c5fd; }
+  }
+  
+  .animate-blink {
+    animation: blink 0.4s ease-in-out;
+  }
+  
