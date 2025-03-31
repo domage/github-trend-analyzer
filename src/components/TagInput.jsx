@@ -464,8 +464,18 @@ function TagInput({ tags, setTags, onAnalyze, isLoading }) {
         <button
           type="button"
           className="ml-2 px-4 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
-          onClick={onAnalyze}
-          disabled={isLoading || tags.length === 0}
+          onClick={() => {
+            if (inputValue.trim()) {
+              addTags(); // convert input into pills first
+            }
+            // Wait for tags to update, then analyze
+            setTimeout(() => {
+              if (tags.length > 0 || inputValue.trim()) {
+                onAnalyze();
+              }
+            }, 0);
+          }}
+          disabled={isLoading || (tags.length === 0 && inputValue.trim() === '')}
         >
           {isLoading ? 'Analyzing...' : 'Analyze'}
         </button>
