@@ -465,17 +465,31 @@ function TagInput({ tags, setTags, onAnalyze, isLoading }) {
           type="button"
           className="ml-2 px-4 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
           onClick={() => {
-            if (inputValue.trim()) {
-              addTags(); // convert input into pills first
-            }
-            // Wait for tags to update, then analyze
-            setTimeout(() => {
-              if (tags.length > 0 || inputValue.trim()) {
-                onAnalyze();
+            const trimmedInput = inputValue.trim();
+
+            if (trimmedInput) {
+              const newTags = trimmedInput
+                .split(';')
+                .map(tag => tag.trim())
+                .filter(tag => tag !== '' && !tags.includes(tag));
+
+              const updatedTags = [...tags, ...newTags];
+
+              setTags(updatedTags);
+              setInputValue('');
+
+              console.log("Input:", inputValue);
+              console.log("Tags before update:", tags);
+              console.log("New tags from input:", newTags);
+              console.log("Updated tags that will be passed:", updatedTags);
+
+              if (updatedTags.length > 0) {
+                onAnalyze(updatedTags);
               }
-            }, 0);
+            } else if (tags.length > 0) {
+              onAnalyze(tags);
+            }
           }}
-          disabled={isLoading || (tags.length === 0 && inputValue.trim() === '')}
         >
           {isLoading ? 'Analyzing...' : 'Analyze'}
         </button>

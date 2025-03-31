@@ -143,12 +143,15 @@ function GitHubHIndexApp() {
     };
 
     // Handle form submission
-    const handleSearch = async () => {
-        if (searchTerms.length === 0) {
+    const handleSearch = async (terms = searchTerms) => {
+        console.log("🔍 handleSearch called with:", terms);
+        
+        if (terms.length === 0) {
             setError('Please add at least one search term');
             return;
         }
-        
+                
+        setSearchTerms(terms);
         setIsLoading(true);
         setError(null);
 
@@ -167,11 +170,11 @@ function GitHubHIndexApp() {
         try {
             // Perform H-Index calculation if enabled
             if (showHIndexAnalysis) {
-                if (searchTerms.length > 1) {
+                if (terms.length > 1) {
                     // Handle multiple search terms
                     const results = [];
                     
-                    for (const term of searchTerms) {
+                    for (const term of terms) {
                         try {
                             const result = await processSearchTermForHIndex(term);
                             results.push(result);
@@ -201,7 +204,7 @@ function GitHubHIndexApp() {
                 
                 // Fetch regular metric data
                 const data = await trendTrackerService.compareSearchTerms(
-                    searchTerms,
+                    terms,
                     timeWindows,
                     metric,
                     githubToken
