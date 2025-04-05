@@ -241,7 +241,7 @@ function TagInput({ tags, setTags, onAnalyze, isLoading }) {
   };
 
   const finishEditing = (index) => {
-    const newValue = editInputRef.current.value.trim();
+    const newValue = editInputRef.current.value.trim().toLowerCase();
 
     if (newValue === '') {
       setEditingIndex(-1);
@@ -378,7 +378,7 @@ function TagInput({ tags, setTags, onAnalyze, isLoading }) {
   // Add tags from the current input value
   const addTags = () => {
     const rawTags = inputValue.split(';')
-      .map(tag => tag.trim())
+      .map(tag => tag.trim().toLowerCase())
       .filter(tag => tag !== '');
 
     if (rawTags.length === 0) return;
@@ -404,7 +404,7 @@ function TagInput({ tags, setTags, onAnalyze, isLoading }) {
 
   // Add tags from an array of strings
   const addTagsFromArray = (newTags) => {
-    const trimmedNewTags = newTags.map(tag => tag.trim()).filter(tag => tag !== '');
+    const trimmedNewTags = newTags.map(tag => tag.trim().toLowerCase()).filter(tag => tag !== '');
 
     const uniqueNewTags = trimmedNewTags.filter(tag => !tags.includes(tag));
     const duplicateTags = trimmedNewTags.filter(tag => tags.includes(tag));
@@ -550,7 +550,7 @@ function TagInput({ tags, setTags, onAnalyze, isLoading }) {
             if (trimmedInput) {
               const newTags = trimmedInput
                 .split(';')
-                .map(tag => tag.trim())
+                .map(tag => tag.trim().toLowerCase())
                 .filter(tag => tag !== '' && !tags.includes(tag));
 
               const updatedTags = [...tags, ...newTags];
