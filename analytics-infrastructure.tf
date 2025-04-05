@@ -42,6 +42,26 @@ variable "kv_namespace_name" {
 variable "pages_project_name" {
   description = "Name of the Cloudflare Pages project"
   type        = string
+  default     = ""
+}
+
+variable "cors_allowed_origins" {
+  description = "List of origins allowed to access the worker via CORS"
+  type        = list(string)
+  default     = ["*"] # Default to all origins, or you can specify a list
+}
+
+# Optional variables for custom domain
+variable "custom_domain" {
+  description = "Custom domain for the worker (e.g., analytics.example.com/*)"
+  type        = string
+  default     = ""
+}
+
+variable "cloudflare_zone_id" {
+  description = "Cloudflare zone ID (required only if custom_domain is set)"
+  type        = string
+  default     = ""
 }
 
 # Create KV namespace
@@ -50,11 +70,23 @@ resource "cloudflare_workers_kv_namespace" "analytics_store" {
   title      = var.kv_namespace_name
 }
 
-# Create Worker script (using the updated resource type)
+# Process the worker script with CORS configuration
+locals {
+  worker_template = file("${path.module}/analytics-worker.js")
+  
+  # Replace the ALLOWED_ORIGINS array in the script
+  worker_script = replace(
+    local.worker_template,
+    "const ALLOWED_ORIGINS = [\\s\\S]*?];", # Match the entire ALLOWED_ORIGINS declaration including the array
+    "const ALLOWED_ORIGINS = ${jsonencode(var.cors_allowed_origins)};"
+  )
+}
+
+# Create Worker script
 resource "cloudflare_workers_script" "analytics_worker" {
   account_id = var.cloudflare_account_id
   name       = var.worker_name
-  content    = file("${path.module}/analytics-worker.js")
+  content    = local.worker_script
   
   kv_namespace_binding {
     name         = var.kv_namespace_name
@@ -70,18 +102,9 @@ resource "cloudflare_workers_route" "analytics_route" {
   script_name = cloudflare_workers_script.analytics_worker.name
 }
 
-# Optional variables for custom domain
-variable "custom_domain" {
-  description = "Custom domain for the worker (e.g., analytics.example.com/*)"
-  type        = string
-  default     = ""
-}
 
-variable "cloudflare_zone_id" {
-  description = "Cloudflare zone ID (required only if custom_domain is set)"
-  type        = string
-  default     = ""
-}
+
+
 
 # Use cloudflare_pages_project instead for environment variables
 resource "cloudflare_pages_project" "github_hindex" {
@@ -98,8 +121,8 @@ resource "cloudflare_pages_project" "github_hindex" {
     preview {
       environment_variables = {
         VITE_ANALYTICS_ENDPOINT = "https://${var.worker_name}.${var.cloudflare_account_id}.workers.dev"
-      }
-    }
+  }
+}
   }
 }
 

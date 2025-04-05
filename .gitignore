@@ -33,6 +33,8 @@ override.tf.json
 # Core files
 .terraform.lock.hcl
 
+generated-worker.js
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

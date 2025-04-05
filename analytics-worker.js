@@ -15,6 +15,16 @@
 // KV namespace binding
 // ANALYTICS_STORE - KV namespace for storing analytics data
 
+// CORS configuration - this can be modified manually or by Terraform during deployment
+const ALLOWED_ORIGINS = [
+  // Default to allowing all origins for standalone deployments
+  "*"
+  // Uncomment and add specific origins as needed:
+  // "https://your-app.pages.dev",
+  // "http://localhost:3000",
+  // "http://localhost:5173"
+];
+
 /**
  * Handle incoming requests
  */
@@ -28,9 +38,15 @@ addEventListener('fetch', event => {
  * @returns {Response} - The response
  */
 async function handleRequest(request) {
-  // Set CORS headers for all responses
+  // Get the origin from the request
+  const origin = request.headers.get('Origin');
+  
+  // Determine if the origin is allowed
+  const allowOrigin = determineAllowedOrigin(origin);
+  
+  // Set CORS headers with the proper allowed origin
   const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   };
@@ -75,6 +91,27 @@ async function handleRequest(request) {
       headers: corsHeaders
     });
   }
+}
+
+/**
+ * Determine the appropriate Access-Control-Allow-Origin value based on the request origin
+ * @param {string} requestOrigin - The origin from the request headers
+ * @returns {string} - The Access-Control-Allow-Origin value to use
+ */
+function determineAllowedOrigin(requestOrigin) {
+  // If no origin in request, default to deny (unlikely to happen in browser requests)
+  if (!requestOrigin) return "null";
+  
+  // If we're allowing all origins, return the wildcard
+  if (ALLOWED_ORIGINS.includes("*")) return "*";
+  
+  // Check if the request origin is in our allowed list
+  if (ALLOWED_ORIGINS.includes(requestOrigin)) {
+    return requestOrigin;
+  }
+  
+  // Default to null (deny) if the origin isn't allowed
+  return "null";
 }
 
 /**
