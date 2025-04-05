@@ -11,6 +11,7 @@ import TagInput from './components/TagInput';
 import * as githubService from './services/githubService';
 import * as trendTrackerService from './services/trendTrackerService';
 import * as urlSharingUtils from './utils/urlSharing';
+import * as analyticsService from './services/analyticsService';
 
 /**
  * Main application component with unified search interface
@@ -131,6 +132,18 @@ function GitHubHIndexApp() {
             showTrendAnalysis
         );
         
+        // Log search event for analytics
+        analyticsService.logSearch({
+            searchTerms: terms,
+            dateLimit,
+            startYear,
+            endYear,
+            granularity,
+            metric,
+            showHIndexAnalysis,
+            showTrendAnalysis
+        });
+        
         try {
             // Perform H-Index calculation if enabled
             if (showHIndexAnalysis) {
@@ -177,6 +190,8 @@ function GitHubHIndexApp() {
                 setChartData(data);
             }
         } catch (err) {
+            // Log error to analytics
+            analyticsService.logError('search_error', err.message);
             setError(err.message);
         } finally {
             setIsLoading(false);
