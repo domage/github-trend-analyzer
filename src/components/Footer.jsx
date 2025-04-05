@@ -1,10 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import PrivacyInfo from './PrivacyInfo';
 
 /**
- * Footer component with GitHub link, Buy Me a Coffee link, and API usage information
+ * Footer component with GitHub link, Buy Me a Coffee link, privacy info, and API usage information
  */
 function Footer() {
+    const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
+    
     return (
         <footer className="mt-8 text-center text-gray-500 text-sm">
             {/* Links Row */}
@@ -48,8 +51,22 @@ function Footer() {
                 </a>
             </div>
             
+            {/* Privacy Info Link */}
+            <div className="mt-4 mb-2">
+                <a 
+                    href="#privacy"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        setShowPrivacyInfo(true);
+                    }}
+                    className="text-blue-500 hover:text-blue-700"
+                >
+                    Privacy & Analytics Information
+                </a>
+            </div>
+            
             {/* Disclaimer at the bottom */}
-            <div className="mt-6">
+            <div className="mt-2">
                 <p>
                     Note: GitHub API has rate limits. For unauthenticated requests, the rate limit is 60 requests per hour.
                 </p>
@@ -57,6 +74,15 @@ function Footer() {
                     A GitHub personal access token is required to fetch discussions data and enables GraphQL for better performance.
                 </p>
             </div>
+            
+            {/* Privacy Info Modal */}
+            {showPrivacyInfo && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                        <PrivacyInfo onClose={() => setShowPrivacyInfo(false)} />
+                    </div>
+                </div>
+            )}
         </footer>
     );
 }

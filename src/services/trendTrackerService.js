@@ -2,6 +2,7 @@
  * Trend Tracker Service - Handles time-based trend analysis via GitHub GraphQL API
  */
 import { calculateHIndex } from '../utils';
+import * as analyticsService from './analyticsService';
 
 /**
  * Fetch time-series data for a search term using GraphQL
@@ -14,8 +15,12 @@ import { calculateHIndex } from '../utils';
  */
 export async function fetchTimeSeries(searchTerm, timeWindows, githubToken, metric = 'repositories') {
     if (!githubToken) {
+        analyticsService.logError('trend_analysis', 'Missing GitHub token');
         throw new Error('GitHub token is required for time trend analysis');
     }
+    
+    const startTime = performance.now();
+    let success = true;
     
     // Build the GraphQL query for all time windows in a single request
     let queryString = 'query {';
@@ -66,12 +71,15 @@ export async function fetchTimeSeries(searchTerm, timeWindows, githubToken, metr
         });
         
         if (!response.ok) {
-            throw new Error(`GitHub GraphQL API returned ${response.status}`);
+            const errorText = await response.text();
+            analyticsService.logError('trend_graphql_api', `Status ${response.status}`);
+            throw new Error(`GitHub GraphQL API returned ${response.status}: ${errorText}`);
         }
         
         const result = await response.json();
         
         if (result.errors) {
+            analyticsService.logError('trend_graphql_error', result.errors[0].message);
             throw new Error(`GraphQL Error: ${result.errors[0].message}`);
         }
         
@@ -79,7 +87,13 @@ export async function fetchTimeSeries(searchTerm, timeWindows, githubToken, metr
         return processTimeSeriesData(result.data, timeWindows, metric);
     } catch (error) {
         console.error('Error fetching time series data:', error);
+        success = false;
+        analyticsService.logError('trend_fetch', error.message);
         throw error;
+    } finally {
+        // Log API performance
+        const duration = performance.now() - startTime;
+        analyticsService.logApiPerformance('TrendGraphQL', duration, success);
     }
 }
 
@@ -251,8 +265,12 @@ export function formatPeriodLabel(window) {
  */
 export async function calculateWindowedHIndex(searchTerm, startDate, endDate, property, githubToken) {
     if (!githubToken) {
+        analyticsService.logError('windowed_hindex', 'Missing GitHub token');
         throw new Error('GitHub token is required for windowed H-Index calculation');
     }
+    
+    const startTime = performance.now();
+    let success = true;
     
     // Map REST API property names to GraphQL property names
     const propertyMap = {
@@ -338,12 +356,21 @@ export async function calculateWindowedHIndex(searchTerm, startDate, endDate, pr
             }
         } catch (error) {
             console.error('GraphQL fetch error:', error);
+            success = false;
+            analyticsService.logError('windowed_hindex_fetch', error.message);
             throw error;
         }
     }
     
-    // Calculate H-Index using the imported utility function
-    return calculateHIndex(allRepos, property);
+    try {
+        // Calculate H-Index using the imported utility function
+        const hIndex = calculateHIndex(allRepos, property);
+        return hIndex;
+    } finally {
+        // Log API performance
+        const duration = performance.now() - startTime;
+        analyticsService.logApiPerformance('WindowedHIndex', duration, success);
+    }
 }
 
 /**
@@ -355,8 +382,52 @@ export async function calculateWindowedHIndex(searchTerm, startDate, endDate, pr
  * @param {string} githubToken - GitHub API token
  * @returns {Object} - Comparative time series data
  */
+/**
+ * Determine granularity from time windows
+ * @param {Array} timeWindows - Array of time windows
+ * @returns {string} - Granularity ('year', 'quarter', 'month', or 'unknown')
+ */
+function getGranularityFromWindows(timeWindows) {
+    if (!timeWindows || timeWindows.length === 0) return 'unknown';
+    
+    // Check the first window
+    const window = timeWindows[0];
+    const start = new Date(window.start);
+    const end = new Date(window.end);
+    
+    // Check if it's a full year
+    if (start.getMonth() === 0 && start.getDate() === 1 && 
+        end.getMonth() === 11 && end.getDate() === 31 && 
+        start.getFullYear() === end.getFullYear()) {
+        return 'year';
+    }
+    
+    // Check if it's a quarter (3 months)
+    const monthDiff = (end.getFullYear() - start.getFullYear()) * 12 + end.getMonth() - start.getMonth();
+    if (monthDiff === 2 && start.getDate() === 1) {
+        return 'quarter';
+    }
+    
+    // Check if it's a month
+    if (start.getFullYear() === end.getFullYear() && 
+        start.getMonth() === end.getMonth() && 
+        start.getDate() === 1) {
+        return 'month';
+    }
+    
+    return 'custom';
+}
+
 export async function compareSearchTerms(searchTerms, timeWindows, metric, githubToken) {
     const results = {};
+    
+    // Log the trend analysis request
+    analyticsService.logSearch({
+        searchTerms,
+        metric,
+        granularity: timeWindows.length > 0 ? getGranularityFromWindows(timeWindows) : 'unknown',
+        showTrendAnalysis: true
+    });
     
     // Fetch data for each search term
     for (const term of searchTerms) {
@@ -365,6 +436,7 @@ export async function compareSearchTerms(searchTerms, timeWindows, metric, githu
             results[term] = termData;
         } catch (error) {
             console.error(`Error fetching data for term "${term}":`, error);
+            analyticsService.logError('trend_term_fetch', `Term: ${term}, Error: ${error.message}`);
             results[term] = { error: error.message };
         }
     }

@@ -1,0 +1,15 @@
+# Example Terraform variables file
+# Copy this file to terraform.tfvars and fill in your values
+
+# Required variables
+cloudflare_api_token = "your-cloudflare-api-token"
+cloudflare_account_id = "your-cloudflare-account-id"
+pages_project_name = "your-cloudflare-pages-project-name"
+
+# Optional variables - you can customize these or use the defaults
+worker_name = "github-hindex-analytics"
+kv_namespace_name = "ANALYTICS_STORE"
+
+# Optional variables for custom domain - only needed if you want a custom domain for your worker
+# custom_domain = "analytics.example.com/*"
+# cloudflare_zone_id = "your-cloudflare-zone-id"

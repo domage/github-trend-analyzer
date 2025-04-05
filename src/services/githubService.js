@@ -2,6 +2,7 @@
  * GitHub service module to handle API interactions
  */
 import { calculateHIndex } from '../utils';
+import * as analyticsService from './analyticsService';
 
 /**
  * Fetch repositories and calculate H-Index using GraphQL or REST API
@@ -15,11 +16,27 @@ import { calculateHIndex } from '../utils';
  */
 export async function fetchAndCalculateHIndex(searchTerm, dateLimit, property, sortParam, githubToken) {
     // Use GraphQL if token is available, otherwise fall back to REST
-    if (githubToken) {
-        return fetchAndCalculateHIndexGraphQL(searchTerm, dateLimit, property, githubToken);
-    } else {
-        return fetchAndCalculateHIndexREST(searchTerm, dateLimit, property, sortParam);
+    const startTime = performance.now();
+    let result;
+    let success = true;
+    
+    try {
+        if (githubToken) {
+            result = await fetchAndCalculateHIndexGraphQL(searchTerm, dateLimit, property, githubToken);
+        } else {
+            result = await fetchAndCalculateHIndexREST(searchTerm, dateLimit, property, sortParam);
+        }
+    } catch (error) {
+        success = false;
+        throw error;
+    } finally {
+        // Log API performance
+        const duration = performance.now() - startTime;
+        const apiType = githubToken ? 'GraphQL' : 'REST';
+        analyticsService.logApiPerformance(apiType, duration, success);
     }
+    
+    return result;
 }
 
 /**
@@ -97,12 +114,15 @@ export async function fetchAndCalculateHIndexGraphQL(searchTerm, dateLimit, prop
             });
             
             if (!response.ok) {
-                throw new Error(`GitHub GraphQL API returned ${response.status}: ${await response.text()}`);
+                const errorText = await response.text();
+                analyticsService.logError('graphql_api', `Status ${response.status}`);
+                throw new Error(`GitHub GraphQL API returned ${response.status}: ${errorText}`);
             }
             
             const result = await response.json();
             
             if (result.errors) {
+                analyticsService.logError('graphql_error', result.errors[0].message);
                 throw new Error(`GraphQL Error: ${result.errors[0].message}`);
             }
             
@@ -145,6 +165,7 @@ export async function fetchAndCalculateHIndexGraphQL(searchTerm, dateLimit, prop
             }
         } catch (error) {
             console.error('GraphQL fetch error:', error);
+            analyticsService.logError('graphql_fetch', error.message);
             throw error;
         }
     }
@@ -186,7 +207,9 @@ export async function fetchAndCalculateHIndexREST(searchTerm, dateLimit, propert
         const response = await fetch(url, { headers });
         
         if (!response.ok) {
-            throw new Error(`GitHub API returned ${response.status}: ${await response.text()}`);
+            const errorText = await response.text();
+            analyticsService.logError('rest_api', `Status ${response.status}`);
+            throw new Error(`GitHub API returned ${response.status}: ${errorText}`);
         }
         
         const data = await response.json();
@@ -378,6 +401,7 @@ export async function getTotalCount(searchTerm, dateLimit, itemType, githubToken
             return data.total_count || 0;
         } catch (error) {
             console.error(`Error fetching ${itemType} count:`, error);
+            analyticsService.logError('count_fetch', `${itemType}: ${error.message}`);
             return 0;
         }
     }

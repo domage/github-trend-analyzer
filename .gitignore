@@ -12,6 +12,29 @@ dist
 dist-ssr
 *.local
 
+# Local .terraform directory (provider plugins, modules, etc.)
+.terraform/
+
+# Terraform state files (can contain sensitive data)
+*.tfstate
+*.tfstate.backup
+
+# Plan output
+*.tfplan
+
+# Override files (local-only configuration)
+terraform.tfvars
+terraform.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Core files
+.terraform.lock.hcl
+
+generated-worker.js
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
