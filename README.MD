@@ -57,6 +57,15 @@ You can generate a token here: [https://github.com/settings/tokens](https://gith
 
 No special permissions are required - a basic token with no additional scopes is sufficient.
 
+## Local Development
+
+To run this project locally:
+
+1. Clone the repository
+2. Install dependencies with `npm install`
+3. Start the development server with `npm run dev`
+4. Open your browser to the local development URL (typically http://localhost:5173)
+
 ## Search Tips
 
 - Use GitHub's search syntax for more specific results:
