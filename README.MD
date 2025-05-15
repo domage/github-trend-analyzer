@@ -46,12 +46,19 @@ For multiple search terms, separate them with semicolons (e.g., "React; Vue; Ang
 4. Click "Generate Chart" to visualize the trends
 5. View comparative data and download as CSV if needed
 
-## GitHub API Token
+## GitHub Authentication
 
-This tool requires a GitHub personal access token to:
+This tool uses GitHub OAuth for authentication to:
 - Access the GitHub GraphQL API (better performance)
 - Fetch discussion data
-- Increase rate limits
+- Increase rate limits (5,000 requests/hour vs 60 without auth)
+
+When you first use the application, you'll be prompted to authorize GitHub Trend Analyzer. The app only requires read-only access to:
+- Repository contents and metadata
+- Pull requests and issues (for analytics)
+- User profile information (for identification only)
+
+No write permissions are requested, and your data is never stored on any server.
 
 ## GitHub Authentication
 
@@ -73,8 +80,21 @@ To run this project locally:
 
 1. Clone the repository
 2. Install dependencies with `npm install`
-3. Start the development server with `npm run dev`
-4. Open your browser to the local development URL (typically http://localhost:5173)
+3. Set up GitHub OAuth:
+   - Create a new OAuth App on GitHub (Settings > Developer settings > OAuth Apps)
+   - Set the Authorization callback URL to `http://localhost:5173/callback`
+   - Copy your Client ID and Client Secret
+   - Create a `.dev.vars` file with:
+     ```
+     VITE_GITHUB_CLIENT_ID=your_client_id
+     VITE_GITHUB_CLIENT_SECRET=your_client_secret
+     VITE_REDIRECT_URI=http://localhost:5173/callback
+     ```
+4. Start the development server with `npm run dev:full`
+5. Start the Cloudflare Workers functions locally with `npm run dev:functions`
+6. Open your browser to the local development URL (typically http://localhost:5173)
+
+For more details on setting up OAuth for local development, see the `OAUTH_DEV_GUIDE.md` file.
 
 ## Search Tips
 
