@@ -71,7 +71,7 @@ function Footer() {
                     Note: GitHub API has rate limits. For unauthenticated requests, the rate limit is 60 requests per hour.
                 </p>
                 <p>
-                    A GitHub personal access token is required to fetch discussions data and enables GraphQL for better performance.
+                    Sign in with GitHub to fetch discussions data and enable GraphQL for better performance.
                 </p>
             </div>
             

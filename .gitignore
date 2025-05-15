@@ -45,3 +45,28 @@ generated-worker.js
 *.njsproj
 *.sln
 *.sw?
+
+*.env
+*.dev.vars
+
+# Ignore Cloudflare Workers KV bindings
+wrangler.toml
+
+# Ignore Cloudflare Wrangler directory
+.wrangler/
+
+# Ignore build artifacts
+build/
+
+# Ignore temporary files
+*.tmp
+*.bak
+
+# Ignore analytics data
+analytics-data.json
+
+# Ignore generated files
+*.generated.js
+
+# Ignore test coverage reports
+coverage/
