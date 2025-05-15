@@ -12,6 +12,7 @@ import * as githubService from './services/githubService';
 import * as trendTrackerService from './services/trendTrackerService';
 import * as urlSharingUtils from './utils/urlSharing';
 import * as analyticsService from './services/analyticsService';
+import { getGitHubToken } from './services/authService';
 
 /**
  * Main application component with unified search interface
@@ -24,11 +25,10 @@ function GitHubHIndexApp() {
     const [searchInput, setSearchInput] = useState(urlParams.searchTerm || '');
     const [searchTerms, setSearchTerms] = useState(
         urlParams.searchTerm ? urlParams.searchTerm.split(';').map(term => term.trim()).filter(term => term) : []
-    );
-    const [dateLimit, setDateLimit] = useState(urlParams.dateLimit || '2023-01-01');
+    );    const [dateLimit, setDateLimit] = useState(urlParams.dateLimit || '2023-01-01');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [githubToken, setGithubToken] = useState(localStorage.getItem('githubToken') || '');
+    const [githubToken, setGithubToken] = useState(getGitHubToken() || '');
     
     // H-Index specific state
     const [hIndexResults, setHIndexResults] = useState(null);
@@ -43,11 +43,13 @@ function GitHubHIndexApp() {
     
     // Analysis options
     const [showHIndexAnalysis, setShowHIndexAnalysis] = useState(Boolean(urlParams.showHIndexAnalysis) || false);
-    const [showTrendAnalysis, setShowTrendAnalysis] = useState(Boolean(urlParams.showTrendAnalysis) || true);
-
-    // Save token to localStorage when it changes
+    const [showTrendAnalysis, setShowTrendAnalysis] = useState(Boolean(urlParams.showTrendAnalysis) || true);    // Save token to localStorage when it changes
     useEffect(() => {
-        localStorage.setItem('githubToken', githubToken);
+        // Note: This is no longer needed as the token is managed by authService
+        // Keeping it for backward compatibility during transition
+        if (githubToken) {
+            localStorage.setItem('githubToken', githubToken);
+        }
     }, [githubToken]);
 
     // Process a single search term for H-Index
@@ -104,12 +106,16 @@ function GitHubHIndexApp() {
             topForkedRepos,
             githubToken: !!githubToken // Include token availability flag
         };
-    };
-
-    // Handle form submission
+    };    // Handle form submission
     const handleSearch = async (terms = searchTerms) => {
         if (terms.length === 0) {
             setError('Please add at least one search term');
+            return;
+        }
+        
+        // Check if authentication is required but not provided
+        if ((showTrendAnalysis || showHIndexAnalysis) && !githubToken) {
+            setError('GitHub authentication is required for the selected analysis options');
             return;
         }
     
@@ -158,14 +164,13 @@ function GitHubHIndexApp() {
                         } catch (err) {
                             console.error(`Error processing term "${term}":`, err);
                             // Continue with other terms even if one fails
-                        }
-                    }
+                        }                    }
                     
                     setMultiHIndexResults(results);
                     setHIndexResults(null); // Clear single result when showing multiple
                 } else {
                     // Handle single search term
-                    const result = await processSearchTermForHIndex(searchTerms[0]);
+                    const result = await processSearchTermForHIndex(terms[0]);
                     setHIndexResults(result);
                     setMultiHIndexResults([]); // Clear multiple results when showing single
                 }
@@ -206,10 +211,16 @@ function GitHubHIndexApp() {
             </h1>
             
             {/* Token Input */}
-            
-            <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+              <div className="bg-white p-6 rounded-lg shadow-md mb-6">
                 <TokenInput githubToken={githubToken} setGithubToken={setGithubToken} />
             </div>
+            
+            {/* Token warning for trend analysis */}
+            {showTrendAnalysis && !githubToken && (
+                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
+                    <p>GitHub Authentication is required for trend analysis. Please sign in with GitHub above.</p>
+                </div>
+            )}
             
             {/* Unified Search Interface */}
             <fieldset disabled={isLoading}>
@@ -340,18 +351,9 @@ function GitHubHIndexApp() {
                 </div>
                 )}
             </div>
-            </fieldset>
-            
-            
+            </fieldset>            
             {/* Error display */}
             <ErrorDisplay error={error} />
-            
-            {/* Token warning for trend analysis */}
-            {showTrendAnalysis && !githubToken && (
-                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
-                    <p>GitHub token is required for trend analysis. Please add a token above.</p>
-                </div>
-            )}
             
             {/* Results Section */}
             {/* Trend Chart if trend analysis is enabled */}

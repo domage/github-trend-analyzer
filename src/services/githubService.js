@@ -3,6 +3,7 @@
  */
 import { calculateHIndex } from '../utils';
 import * as analyticsService from './analyticsService';
+import { getGitHubToken } from './authService';
 
 /**
  * Fetch repositories and calculate H-Index using GraphQL or REST API
@@ -20,9 +21,12 @@ export async function fetchAndCalculateHIndex(searchTerm, dateLimit, property, s
     let result;
     let success = true;
     
+    // Get token from auth service if not provided directly
+    const token = githubToken || getGitHubToken();
+    
     try {
-        if (githubToken) {
-            result = await fetchAndCalculateHIndexGraphQL(searchTerm, dateLimit, property, githubToken);
+        if (token) {
+            result = await fetchAndCalculateHIndexGraphQL(searchTerm, dateLimit, property, token);
         } else {
             result = await fetchAndCalculateHIndexREST(searchTerm, dateLimit, property, sortParam);
         }

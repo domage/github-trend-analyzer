@@ -53,9 +53,28 @@ This tool requires a GitHub personal access token to:
 - Fetch discussion data
 - Increase rate limits
 
-You can generate a token here: [https://github.com/settings/tokens](https://github.com/settings/tokens)
+## GitHub Authentication
 
-No special permissions are required - a basic token with no additional scopes is sufficient.
+This tool uses GitHub OAuth for authentication to:
+- Access the GitHub GraphQL API (better performance)
+- Fetch discussion data
+- Increase rate limits (5,000 requests/hour vs 60 without auth)
+
+When you first use the application, you'll be prompted to authorize GitHub Trend Analyzer. The app only requires read-only access to:
+- Repository contents and metadata
+- Pull requests and issues (for analytics)
+- User profile information (for identification only)
+
+No write permissions are requested, and your data is never stored on any server.
+
+## Local Development
+
+To run this project locally:
+
+1. Clone the repository
+2. Install dependencies with `npm install`
+3. Start the development server with `npm run dev`
+4. Open your browser to the local development URL (typically http://localhost:5173)
 
 ## Search Tips
 
